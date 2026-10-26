@@ -23,6 +23,23 @@ class LocalEmbeddingStub:
 
 
 class IntegrationTests(unittest.TestCase):
+    def test_local_vectors_to_search_without_model_download(self):
+        from app.embeddings.embedding import Embedding
+        with TemporaryDirectory(dir=Path.cwd()) as directory:
+            path = Path(directory) / 'chunks.json'
+            path.write_text(json.dumps({'chunks': [
+                {'content': 'High pressure alarm pump',
+                 'document_metadata': {'document_name': 'pressure.txt'}},
+                {'content': 'Office holiday calendar',
+                 'document_metadata': {'document_name': 'calendar.txt'}}]}), encoding='utf-8')
+            store = VectorStore(Path(directory) / 'vectors.sqlite')
+            embedding = Embedding()
+            Indexer(embedding, store).index(path, authoritative=True)
+            result = Search(embedding, store).search('pressure alarm')
+            self.assertEqual(result['documents'][0]['title'], 'pressure.txt')
+            self.assertEqual(len(embedding.encode('pressure')['vectors'][0]), 1024)
+            self.assertEqual(embedding.encode('pressure'), Embedding().encode('pressure'))
+
     def test_existing_chunks_to_search_without_modifying_source(self):
         from unittest.mock import patch
         with TemporaryDirectory(dir=Path.cwd()) as directory:

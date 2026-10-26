@@ -15,7 +15,7 @@ class Search:
         if not isinstance(query, str) or not query.strip() or len(query) > 8000: raise ValueError('Query must contain 1–8000 characters')
         top = int(os.getenv('LOCAL_SEARCH_TOP', '5'))
         if not 1 <= top <= 50: raise ValueError('LOCAL_SEARCH_TOP must be between 1 and 50')
-        name = os.getenv('LOCAL_EMBEDDING_MODEL', 'sentence-transformers/all-MiniLM-L6-v2')
+        name = getattr(self.__embedding, 'model_name', os.getenv('LOCAL_EMBEDDING_MODEL', 'local-hashed-words-v1'))
         rows = self.__store.execute('read', model=name, source_ids=source_ids)
         if not rows:
             return {'mode': 'local_hybrid', 'documents': []}
