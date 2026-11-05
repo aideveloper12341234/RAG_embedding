@@ -1,0 +1,1 @@
+what if we land the full extracted text per document in Bronze and do the chunking and noise filtering in Silver? Then if we need to change chunk size or overlap later for better RAG accuracy, we just reprocess from Bronze in Databricks and skip re-pulling everything from SharePoint, since MS Graph rate limits make that a pain.
