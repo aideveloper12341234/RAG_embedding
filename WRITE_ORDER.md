@@ -34,3 +34,6 @@ POST /api/v1/search accepts {"query": "high pressure alarm"}. Open http://127.0.
 For an existing server use its normal startup command instead of python -m app.api. The alternate indexing command remains python -m app.document_processing.index_documents --authoritative.
 
 The host chunker and actual chunks.json are not present in this checkout. Integration tests use representative chunks, including an end-to-end test with the temporary local vectors. Searching your documents requires your actual chunks.json. Local scanning is intended for development; Azure reranking, CK-21 calibrated match labels (currently unscored), and CK-25 baseline evaluation remain pending.
+
+
+.
