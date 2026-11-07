@@ -17,3 +17,4 @@ class SearchDocument(BaseModel):
 class SearchResponse(BaseModel):
     mode: Literal['local_hybrid']
     documents: list[SearchDocument]
+    response_time_ms: float = Field(ge=0, allow_inf_nan=False)
