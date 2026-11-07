@@ -9,15 +9,10 @@ from app.retrieval.search import Search
 from app.storage.vector_store import VectorStore
 
 
-class Tokens:
-    def encode(self, text, **kwargs):
-        return list(text)
-
-
 class LocalEmbeddingStub:
     def encode(self, texts=None, *, chunks=None):
         if chunks is not None:
-            records, skipped = EmbeddingRecords.adapt(chunks, 'test', {}, r'P-\d+', Tokens(), 1000)
+            records, skipped = EmbeddingRecords.adapt(chunks, 'test', {}, r'P-\d+')
             return {'records': records, 'skipped': skipped, 'model': 'test'}
         return {'vectors': [[1.0, 0.0]], 'model': 'test'}
 

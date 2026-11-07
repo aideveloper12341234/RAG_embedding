@@ -27,15 +27,11 @@ class Embedding:
         norm = math.sqrt(sum(value * value for value in vector))
         return [value / norm for value in vector]
     def __prepare(self, chunks):
-        class TokenCounter:
-            def encode(self, text, **kwargs):
-                return list(text)
         pattern = os.getenv('CK27_CODE_PATTERN') or r'(?<![A-Za-z0-9_-])[A-Za-z][A-Za-z0-9]*-\d+[A-Za-z0-9]*(?![A-Za-z0-9_-])'
         import json
         return EmbeddingRecords.adapt(chunks, os.getenv('CK27_SOURCE_NAMESPACE') or 'local',
                      json.loads(os.getenv('CK27_REQUIRED_METADATA', '{}')),
-                     pattern, TokenCounter(),
-                     2000)
+                     pattern)
 if __name__ == '__main__':
     from dotenv import load_dotenv
     load_dotenv()

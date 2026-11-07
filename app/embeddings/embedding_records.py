@@ -4,11 +4,9 @@ from app.utils.record_utils import RecordUtils
 
 class EmbeddingRecords:
     @staticmethod
-    def adapt(chunks, namespace, required, pattern, encoding, max_tokens):
+    def adapt(chunks, namespace, required, pattern):
         if not isinstance(required, dict) or any(not isinstance(path, str) or not path for path in required.values()):
             raise ValueError('Required metadata must map names to nonempty dotted paths')
-        if max_tokens <= 0:
-            raise ValueError('Token budget must be positive')
         records, skipped = [], []
         for ordinal, chunk in enumerate(chunks):
             if not isinstance(chunk, dict):
@@ -42,26 +40,9 @@ class EmbeddingRecords:
             locator = {key: chunk[key] for key in ('pages', 'slide_number', 'sheet_name', 'row_number', 'images') if key in chunk}
             source = str(metadata.get('source_id') or metadata.get('source_uri') or metadata['document_name'])
             source_id = RecordUtils.digest(namespace + '\n' + source)
-            start, segment = 0, 0
-            while start < len(text):
-                end = EmbeddingRecords.__end(text, start, encoding, max_tokens)
-                line = text.rfind('\n', text.find('\n') + 1 if not start else start + 1, end)
-                end = line + 1 if line >= start else end
-                piece = text[start:end]
-                records.append({'id': RecordUtils.digest(f'{source_id}:{ordinal}:{segment}'),
-                                'source_id': source_id, 'title': title, 'content': piece,
-                                'equipment_codes': RecordUtils.codes(piece, pattern),
-                                'payload': json.dumps({'document_metadata': metadata, 'locator': locator,
-                                                       'ck18': mapped, 'segment': segment}, ensure_ascii=False)})
-                start, segment = end, segment + 1
+            records.append({'id': RecordUtils.digest(f'{source_id}:{ordinal}:0'),
+                            'source_id': source_id, 'title': title, 'content': text,
+                            'equipment_codes': RecordUtils.codes(text, pattern),
+                            'payload': json.dumps({'document_metadata': metadata, 'locator': locator,
+                                                   'ck18': mapped, 'segment': 0}, ensure_ascii=False)})
         return records, skipped
-    @staticmethod
-    def __end(text, start, encoding, max_tokens):
-        lo, hi, end = start + 1, len(text), start
-        while lo <= hi:
-            middle = (lo + hi) // 2
-            valid = len(encoding.encode(text[start:middle], disallowed_special=())) <= max_tokens
-            end, lo, hi = (middle, middle + 1, hi) if valid else (end, lo, middle - 1)
-        if end == start:
-            raise ValueError('Token budget cannot encode one character')
-        return end
