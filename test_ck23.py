@@ -3,9 +3,8 @@
 import asyncio
 import json
 import os
-import sqlite3
 import unittest
-from contextlib import closing
+from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -19,7 +18,7 @@ class CK23Tests(unittest.TestCase):
         with TemporaryDirectory(dir=Path.cwd()) as directory:
             root = Path(directory)
             index = root / 'search.sqlite'
-            gaps = root / 'gaps.sqlite'
+            gaps = root / 'gaps.txt'
             chunks = root / 'chunks.json'
             chunks.write_text(json.dumps({'chunks': [{
                 'content': 'P-101 high pressure alarm. Inspect the pump.',
@@ -31,7 +30,7 @@ class CK23Tests(unittest.TestCase):
                 'LOCAL_SEARCH_TOP': '5',
                 'CK27_CODE_PATTERN': r'[A-Z]+-\d+',
                 'CK27_REQUIRED_METADATA': '{}',
-                'CK23_GAP_DB': str(gaps),
+                'CK23_GAP_LOG': str(gaps),
                 'CK23_ESCALATION_GUIDANCE': guidance,
             }):
                 Indexer().index(chunks, authoritative=True)
@@ -54,10 +53,10 @@ class CK23Tests(unittest.TestCase):
                     with self.assertRaises(FileNotFoundError):
                         asyncio.run(service.search('another alarm', alarm_id='incident-3'))
 
-                with closing(sqlite3.connect(gaps)) as database:
-                    rows = database.execute(
-                        'SELECT alarm_id, query FROM documentation_gaps ORDER BY id'
-                    ).fetchall()
+                records = [json.loads(line) for line in gaps.read_text(encoding='utf-8').splitlines()]
+                for record in records:
+                    self.assertEqual(datetime.fromisoformat(record['recorded_at']).utcoffset().total_seconds(), 0)
+                rows = [(record['alarm_id'], record['query']) for record in records]
                 self.assertEqual(rows, [('incident-2', 'P-999 pressure alarm'),
                                         (None, 'What is the frost alarm?')])
 

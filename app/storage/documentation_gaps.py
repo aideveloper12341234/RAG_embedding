@@ -1,23 +1,20 @@
+import json
 import os
-import sqlite3
-from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
+from threading import Lock
+
+
+_append_lock = Lock()
 
 
 def record_gap(query: str, alarm_id: str | None) -> None:
-    path = Path(os.getenv('CK23_GAP_DB') or '.state/documentation_gaps.sqlite')
+    path = Path(os.getenv('CK23_GAP_LOG') or '.state/documentation_gaps.txt')
     path.parent.mkdir(parents=True, exist_ok=True)
-    with closing(sqlite3.connect(path, timeout=30)) as database, database:
-        database.execute("""
-            CREATE TABLE IF NOT EXISTS documentation_gaps (
-                id INTEGER PRIMARY KEY,
-                recorded_at TEXT NOT NULL,
-                alarm_id TEXT,
-                query TEXT NOT NULL
-            )
-        """)
-        database.execute(
-            'INSERT INTO documentation_gaps (recorded_at, alarm_id, query) VALUES (?, ?, ?)',
-            (datetime.now(timezone.utc).isoformat(), alarm_id, query),
-        )
+    entry = {
+        'recorded_at': datetime.now(timezone.utc).isoformat(),
+        'alarm_id': alarm_id,
+        'query': query,
+    }
+    with _append_lock, path.open('a', encoding='utf-8') as log:
+        log.write(json.dumps(entry, ensure_ascii=False) + '\n')
