@@ -3,6 +3,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class SearchRequest(BaseModel):
     model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
     query: str = Field(min_length=1, max_length=8000)
+    alarm_id: str | None = Field(default=None, min_length=1, max_length=256)
 class SearchDocument(BaseModel):
     source_id: str
     title: str
@@ -18,3 +19,5 @@ class SearchResponse(BaseModel):
     mode: Literal['local_hybrid']
     documents: list[SearchDocument]
     response_time_ms: float = Field(ge=0, allow_inf_nan=False)
+    message: Literal['Details not available'] | None = None
+    escalation_guidance: str | None = None

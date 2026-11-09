@@ -7,6 +7,9 @@ from app.embeddings.embedding import Embedding
 from app.storage.vector_store import VectorStore
 from app.utils.record_utils import RecordUtils
 PATTERN = "(?<![A-Za-z0-9_-])[A-Za-z][A-Za-z0-9]*-\\d+[A-Za-z0-9]*(?![A-Za-z0-9_-])"
+GENERIC_ALARM_TERMS = frozenset(
+    'a an and alarm alarms alert alerts about details do does for how i in is it me of on or please show tell the this to what when where with'.split()
+)
 class Search:
     def __init__(self, embedding=None, store=None):
         self.__embedding = embedding or Embedding()
@@ -27,7 +30,16 @@ class Search:
         frequencies = {term: sum(term in count for count in counts) for term in terms}
         average = sum(sum(c.values()) for c in counts) / len(counts)
         lexical, semantic = [], []
+        exact = set(RecordUtils.codes(query, os.getenv('CK27_CODE_PATTERN') or PATTERN))
+        meaningful_terms = terms - GENERIC_ALARM_TERMS
+        exact_rows = {i for i, (record, _) in enumerate(rows) if exact.intersection(record['equipment_codes'])}
         for i, ((p,v), c) in enumerate(zip(rows, counts)):
+            if exact and i not in exact_rows:
+                continue
+            # Local hashed vectors can match by collision. Require real term
+            # overlap for uncoded queries while this lexical fallback is in use.
+            if not exact and name == 'local-hashed-words-v1' and not meaningful_terms.intersection(c):
+                continue
             score = 0.0
             for term in terms:
                 frequency = frequencies[term]
@@ -40,11 +52,9 @@ class Search:
             for rank, (i, score) in enumerate(sorted(ranking, key=lambda x:x[1], reverse=True)[:50], 1):
                 if score > 0:
                     fused[i] += 1/(60+rank)
-        exact = set(RecordUtils.codes(query, os.getenv('CK27_CODE_PATTERN') or PATTERN))
-        for i, (record, _) in enumerate(rows):
-            if exact.intersection(record['equipment_codes']):
-                fused.setdefault(i, 0.0)
-        ordered = sorted(fused, key=lambda i:(bool(exact.intersection(rows[i][0]['equipment_codes'])), fused[i]), reverse=True)
+        for i in sorted(exact_rows):
+            fused.setdefault(i, 0.0)
+        ordered = sorted(fused, key=lambda i:(i in exact_rows, fused[i]), reverse=True)
         documents, seen = [], set()
         for i in ordered:
             p = rows[i][0]

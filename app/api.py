@@ -4,10 +4,10 @@ from app.api_models import SearchRequest, SearchResponse
 from app.retrieval.search_service import SearchService
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix='/api/v1', tags=['search'])
-@router.post('/search', response_model=SearchResponse)
+@router.post('/search', response_model=SearchResponse, response_model_exclude_unset=True)
 async def search_documents(request: SearchRequest) -> SearchResponse:
     try:
-        return SearchResponse.model_validate(await SearchService().search(request.query))
+        return SearchResponse.model_validate(await SearchService().search(request.query, alarm_id=request.alarm_id))
     except FileNotFoundError:
         raise HTTPException(409, 'Search index missing; run python -m app.storage.vector_store') from None
     except ValueError as exc:
