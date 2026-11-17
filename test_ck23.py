@@ -44,8 +44,9 @@ class CK23Tests(unittest.TestCase):
                                         ('What is the frost alarm?', None)]:
                     with self.subTest(query=query):
                         result = asyncio.run(service.search(query, alarm_id=alarm_id))
+                        print(result['message'])
                         self.assertEqual(result['documents'], [])
-                        self.assertEqual(result['message'], 'Details not available')
+                        self.assertEqual(result['message'], 'Details not available. No Sharepoint/Advanced Alarming documentation exists for this alarm, further investigation needed.')
                         self.assertEqual(result['escalation_guidance'], guidance)
                         self.assertGreaterEqual(result['response_time_ms'], 0)
 

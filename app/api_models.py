@@ -19,5 +19,5 @@ class SearchResponse(BaseModel):
     mode: Literal['local_hybrid']
     documents: list[SearchDocument]
     response_time_ms: float = Field(ge=0, allow_inf_nan=False)
-    message: Literal['Details not available'] | None = None
+    message: Literal['Details not available. No Sharepoint/Advanced Alarming documentation exists for this alarm, further investigation needed.'] | None = None
     escalation_guidance: str | None = None
