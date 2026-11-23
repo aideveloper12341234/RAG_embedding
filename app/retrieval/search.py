@@ -33,7 +33,7 @@ class Search:
         exact = set(RecordUtils.codes(query, os.getenv('CK27_CODE_PATTERN') or PATTERN))
         meaningful_terms = terms - GENERIC_ALARM_TERMS
         phrase = None
-        if not exact and len(query.split()) > 1:
+        if not exact and len(re.findall(r'\w+', query)) > 1:
             phrase = re.compile(r'(?<!\w)' + re.escape(query.strip().casefold()) + r'(?!\w)')
         exact_rows = {i for i, (record, _) in enumerate(rows) if exact.intersection(record['equipment_codes'])}
         for i, ((p,v), c) in enumerate(zip(rows, counts)):
