@@ -4,7 +4,7 @@ from time import perf_counter
 from app.retrieval.search import Search
 from app.storage.documentation_gaps import record_gap
 
-DEFAULT_ESCALATION_GUIDANCE = 'Follow your standard alarm escalation procedure.'
+from app.response_messages import DEFAULT_ESCALATION_GUIDANCE, DETAILS_NOT_AVAILABLE
 
 
 class SearchService:
@@ -22,7 +22,7 @@ class SearchService:
             return result
         record_gap(query, alarm_id)
         guidance = os.getenv('CK23_ESCALATION_GUIDANCE', '').strip() or DEFAULT_ESCALATION_GUIDANCE
-        return {**result, 'message': 'Details not available. No Sharepoint/Advanced Alarming documentation exists for this alarm, further investigation needed.', 'escalation_guidance': guidance}
+        return {**result, 'message': DETAILS_NOT_AVAILABLE, 'escalation_guidance': guidance}
 if __name__ == '__main__':
     import argparse
     import json
